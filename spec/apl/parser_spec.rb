@@ -1,10 +1,27 @@
 require 'spec_helper'
-require 'parslet/rig/rspec'
+require 'tempfile'
 
 module APL
-  RSpec.describe Parser do
-    it 'is a Parslet parser' do
-      expect(subject).to be_a_kind_of Parslet::Parser
+  RSpec.describe 'Parser' do
+    tempfile = Tempfile.new ['parser', '.rb']
+
+    before(:all) do
+      parser_path = File.join(File.dirname(__FILE__), '../../lib/apl/parser.kpeg')
+      system 'bundle', 'exec', 'kpeg', '-o', tempfile.path, '--force', parser_path
+      require tempfile.path
+    end
+
+    after(:all) do
+      tempfile.unlink
+    end
+
+    let(:subject_class) { APL::Parser }
+    let(:input) { '' }
+
+    subject { subject_class.new input }
+
+    it 'is a KPeg parser' do
+      expect(subject).to be_a_kind_of KPeg::CompiledParser
     end
 
     context 'parsing' do
@@ -12,76 +29,125 @@ module APL
       let(:integer_string) { integer.to_s }
       let(:float) { rand(1..1000000) * 0.01 }
       let(:float_string) { '%.2f' % float }
+      let(:rule) { nil }
 
-      describe '#number' do
-        subject { super().number }
+      before(:each) { subject.parse rule }
 
-        it 'parses positive integers' do
-          expect(subject).to parse integer_string
+      describe 'numbers' do
+        let(:rule) { 'number' }
+
+        context 'positive integer' do
+          let(:input) { integer_string }
+          it { is_expected.to be_success }
         end
 
-        it 'parses negative integers' do
-          expect(subject).to parse "¯#{integer_string}"
+        context 'negative integers' do
+          let(:input) { "¯#{integer_string}" }
+          it { is_expected.to be_success }
         end
 
-        it 'parses floats' do
-          expect(subject).to parse float_string
-          expect(subject).to parse "¯#{float_string}"
+        context 'floats' do
+          let(:input) { float_string }
+
+          context 'without sign' do
+            it { is_expected.to be_success }
+          end
+
+          context 'with negative sign' do
+            let(:input) { '¯' << super() }
+            it { is_expected.to be_success }
+          end
         end
 
-        it 'parses exponential notation' do
-          expect(subject).to parse "#{float_string}e#{integer}"
-          expect(subject).to parse "#{float_string}E¯#{integer}"
+        context 'exponential notation' do
+          let(:input) { float_string + e + integer_string }
+
+          context 'capital E' do
+            let(:e) { 'E' }
+            it { is_expected.to be_success }
+          end
+
+          context 'lowercase e' do
+            let(:e) { 'e' }
+            it { is_expected.to be_success }
+          end
         end
 
-        it 'does not parse letters' do
+        xit 'does not parse letters' do
           expect(subject).not_to parse 'a'
         end
 
-        it 'does not parse negative signs except at the beginning' do
+        xit 'does not parse negative signs except at the beginning' do
           expect(subject).not_to parse "#{integer_string}¯#{integer_string}"
           expect(subject).not_to parse "#{integer_string}¯"
         end
 
-        it 'does not parse numbers with more than one decimal point' do
+        xit 'does not parse numbers with more than one decimal point' do
           expect(subject).not_to parse "#{float_string}.#{integer}"
         end
       end
 
-      describe '#expression' do
+      describe 'expression' do
         let(:function_symbols) { %w[+ - × ÷] }
         let(:function) { function_symbols.sample }
         let(:numbers) { [integer_string, float_string] }
-        let(:simple_dyadic) { [numbers.sample, function, numbers.sample].join }
+        let(:rule) { 'expression' }
 
-        subject { super().expression }
+        context 'single number' do
+          context 'integer' do
+            let(:input) { integer_string }
+            it { is_expected.to be_success }
+          end
 
-        it 'can be a number' do
-          expect(subject).to parse integer_string
-          expect(subject).to parse float_string
+          context 'float' do
+            let(:input) { float_string }
+            it { is_expected.to be_success }
+          end
         end
 
-        it 'can be a dyadic function call on two numbers' do
-          expect(subject).to parse simple_dyadic
-        end
+        context 'function calls' do
+          let(:simple_dyadic) { [numbers.sample, function, numbers.sample].join }
 
-        it 'can have multiple dyadic calls without parentheses' do
-          expression = (1..3).map { [numbers.sample, function_symbols.sample] }.join << numbers.sample
-          expect(subject).to parse expression
-        end
+          context 'dyadic' do
+            context 'two simple numbers' do
+              let(:input) { simple_dyadic }
+              it { is_expected.to be_success }
+            end
 
-        it 'can parenthesize the first argument' do
-          expect(subject).to parse "(#{simple_dyadic})#{function}#{numbers.sample}"
-        end
+            context 'multiple dyadic calls without parentheses' do
+              let(:input) { (1..3).map { [numbers.sample, function_symbols.sample] }.join << numbers.sample }
+              it { is_expected.to be_success }
+            end
 
-        it 'can parenthesize the second argument' do
-          expect(subject).to parse "#{numbers.sample}#{function}(#{simple_dyadic})"
-        end
+            context 'first argument parenthesized' do
+              let(:input) { "(#{simple_dyadic})#{function}#{numbers.sample}" }
+              it { is_expected.to be_success }
+            end
 
-        it 'can be a monadic call, with or without parentheses' do
-          monadic = "#{function}#{numbers.sample}"
-          expect(subject).to parse monadic
-          expect(subject).to parse "(#{monadic})"
+            context 'second argument parenthesized' do
+              let(:input) { "#{numbers.sample}#{function}(#{simple_dyadic})" }
+              it { is_expected.to be_success }
+            end
+          end
+
+          context 'monadic' do
+            let(:simple_monadic) {  "#{function}#{numbers.sample}" }
+
+            context 'simple number' do
+              let(:input) { simple_monadic }
+              it { is_expected.to be_success }
+            end
+
+            context 'all parenthesized' do
+              let(:input) { "(#{simple_monadic})" }
+              it { is_expected.to be_success }
+            end
+
+            context 'only argument parenthesized' do
+              let(:input) { "#{function}(#{simple_dyadic})" }
+              it { is_expected.to be_success }
+            end
+          end
         end
       end
     end

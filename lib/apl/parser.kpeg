@@ -1,0 +1,30 @@
+%% name = APL::Parser
+
+%% {
+  def success?
+    @pos == @string_size
+  end
+
+  def failure?
+    !success?
+  end
+}
+
+DIGIT = /[0-9]/
+digits = DIGIT+
+exponent_prefix = /e/i
+negative_sign = '¯'
+radix = '.'
+function = /[-+×÷]/
+
+root = expression
+expression = < function_call | term >
+
+function_call = < term? function expression >
+
+term = < number | '(' expression ')' >
+
+number = integer decimal? exponent?
+integer = negative_sign? digits
+decimal = radix digits
+exponent = exponent_prefix digits
