@@ -11,3 +11,6 @@
 # rspec failure tracking
 .rspec_status
 .ruby-version
+
+# generated file
+lib/apl/parser.rb

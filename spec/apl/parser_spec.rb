@@ -33,7 +33,7 @@ module APL
 
       before(:each) { subject.parse rule }
 
-      describe 'numbers' do
+      describe 'number' do
         let(:rule) { 'number' }
 
         context 'positive integer' do
@@ -87,13 +87,44 @@ module APL
         end
       end
 
+      describe 'vector' do
+        let(:rule) { 'vector' }
+
+        context 'single integer' do
+          let(:input) { integer_string }
+          it { is_expected.to be_failure }
+        end
+
+        context 'multiple numbers' do
+          let(:integers) { Array.new(rand 2..5) { rand 1..1000 } }
+          let(:numbers) { integers }
+          let(:numbers_string) { numbers.join ' ' }
+          let(:input) { numbers_string }
+
+          context 'all positive integers' do
+            it { is_expected.to be_success }
+          end
+
+          context 'negative too' do
+            let(:integers) { super() << "¯#{rand 1..1000}" }
+            it { is_expected.to be_success }
+          end
+
+          context 'floats' do
+            let(:numbers) { super() << (rand(1..1000) * 0.01) }
+            it { is_expected.to be_success }
+          end
+        end
+      end
+
       describe 'expression' do
         let(:function_symbols) { %w[+ - × ÷] }
         let(:function) { function_symbols.sample }
         let(:numbers) { [integer_string, float_string] }
+        let(:vector_string) { numbers.join ' ' }
         let(:rule) { 'expression' }
 
-        context 'single number' do
+        context 'single value' do
           context 'integer' do
             let(:input) { integer_string }
             it { is_expected.to be_success }
@@ -101,6 +132,11 @@ module APL
 
           context 'float' do
             let(:input) { float_string }
+            it { is_expected.to be_success }
+          end
+
+          context 'vector' do
+            let(:input) { vector_string }
             it { is_expected.to be_success }
           end
         end
@@ -111,6 +147,16 @@ module APL
           context 'dyadic' do
             context 'two simple numbers' do
               let(:input) { simple_dyadic }
+              it { is_expected.to be_success }
+            end
+
+            context 'vector on left' do
+              let(:input) { [vector_string, function, integer].join }
+              it { is_expected.to be_success }
+            end
+
+            context 'vector on right' do
+              let(:input) { [float, function, vector_string].join }
               it { is_expected.to be_success }
             end
 

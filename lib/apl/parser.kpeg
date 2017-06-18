@@ -10,6 +10,7 @@
   end
 }
 
+space = /\s/
 DIGIT = /[0-9]/
 digits = DIGIT+
 exponent_prefix = /e/i
@@ -22,7 +23,9 @@ expression = < function_call | term >
 
 function_call = < term? function expression >
 
-term = < number | '(' expression ')' >
+term = < primitive_value | '(' expression ')' >
+vector = < number space+ primitive_value >
+primitive_value = < vector | number >
 
 number = integer decimal? exponent?
 integer = negative_sign? digits
