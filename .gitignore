@@ -14,3 +14,4 @@
 
 # generated file
 lib/apl/parser.rb
+*.kpeg.rb
