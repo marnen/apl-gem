@@ -14,8 +14,8 @@ space = /\s/
 DIGIT = /[0-9]/
 digits = < DIGIT+ > { text }
 exponent_prefix = /e/i
-negative_sign = < "¯" > { -1 }
-optional_negative = < negative_sign?:negative > { negative || 1 }
+negative_sign = "¯" { -1 }
+optional_negative = negative_sign?:negative { negative || 1 }
 radix = < '.' > { text }
 function = /[-+×÷]/
 
@@ -25,11 +25,11 @@ expression = < function_call | term >
 function_call = < term? function expression >
 
 term = < primitive_value:prim | '(' expression ')' >
-primitive_value = < vector:vector | number:number > { vector || number }
-vector = < number:first space+ primitive_value:rest > { Array(first) + Array(rest) }
+primitive_value = vector:vector | number:number { vector || number }
+vector = number:first space+ primitive_value:rest { Array(first) + Array(rest) }
 
-number = < optional_negative:negative nonnegative_integer:integer decimal?:decimal exponent?:exponent > { (integer + (decimal ? decimal.to_f : 0)) * negative * (exponent || 1) }
-integer = < optional_negative:negative nonnegative_integer:integer > { integer * negative }
-nonnegative_integer = < digits:num > { num.to_i }
+number = optional_negative:negative nonnegative_integer:integer decimal?:decimal exponent?:exponent { (integer + (decimal ? decimal.to_f : 0)) * negative * (exponent || 1) }
+integer = optional_negative:negative nonnegative_integer:integer { integer * negative }
+nonnegative_integer = digits:num { num.to_i }
 decimal = < radix digits > { text }
-exponent = < exponent_prefix integer:exponent > { 10 ** exponent }
+exponent = exponent_prefix integer:exponent { 10 ** exponent }
