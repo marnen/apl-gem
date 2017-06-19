@@ -128,6 +128,14 @@ module APL
           let(:input) { "#{float_string}.#{integer}" }
           it { is_expected.to be_failure }
         end
+
+        context 'consuming trailing whitespace' do
+          let(:input) { "#{integer_string} " }
+          it { is_expected.to be_success }
+          it 'returns the number as if the whitespace did not exist' do
+            expect(result).to be == integer
+          end
+        end
       end
 
       describe 'vector' do
