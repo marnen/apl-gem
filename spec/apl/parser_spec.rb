@@ -17,8 +17,9 @@ module APL
 
     let(:subject_class) { APL::Parser }
     let(:input) { '' }
+    let(:parser) { subject_class.new input }
 
-    subject { subject_class.new input }
+    subject { parser }
 
     it 'is a KPeg parser' do
       expect(subject).to be_a_kind_of KPeg::CompiledParser
@@ -29,6 +30,7 @@ module APL
       let(:integer_string) { integer.to_s }
       let(:float) { rand(1..1000000) * 0.01 }
       let(:float_string) { '%.2f' % float }
+      let(:result) { subject.result }
       let(:rule) { nil }
 
       before(:each) { subject.parse rule }
@@ -38,52 +40,93 @@ module APL
 
         context 'positive integer' do
           let(:input) { integer_string }
+
           it { is_expected.to be_success }
+          it 'returns the integer' do
+            expect(result).to be == integer
+          end
         end
 
         context 'negative integers' do
           let(:input) { "¯#{integer_string}" }
           it { is_expected.to be_success }
+          it 'returns the integer' do
+            expect(result).to be == -integer
+          end
         end
 
         context 'floats' do
+          let(:tolerance) { 0.1 }
           let(:input) { float_string }
 
           context 'without sign' do
             it { is_expected.to be_success }
+            it 'returns the float' do
+              expect(result).to be_within(tolerance).of float
+            end
           end
 
           context 'with negative sign' do
             let(:input) { '¯' << super() }
             it { is_expected.to be_success }
+            it 'returns the float' do
+              expect(result).to be_within(tolerance).of -float
+            end
+          end
+
+          context 'exponential notation' do
+            let(:exponent) { rand 2..10 }
+            let(:exponent_string) { exponent.to_s }
+            let(:input) { float_string + e + exponent_string }
+            let(:exponentiated) { float * 10 ** exponent }
+
+            context 'capital E' do
+              let(:e) { 'E' }
+              it { is_expected.to be_success }
+              it 'returns the exponentiated number' do
+                expect(result).to be_within(tolerance).of exponentiated
+              end
+
+              context 'negative exponent' do
+                let(:exponent_string) { "¯#{super()}" }
+                let(:exponentiated) { float * 10 ** -exponent }
+                it { is_expected.to be_success }
+                it 'returns the exponentiated number' do
+                  expect(result).to be_within(tolerance).of exponentiated
+                end
+              end
+            end
+
+            context 'lowercase e' do
+              let(:e) { 'e' }
+              it { is_expected.to be_success }
+              it 'returns the exponentiated number' do
+                expect(result).to be_within(tolerance).of exponentiated
+              end
+            end
           end
         end
 
-        context 'exponential notation' do
-          let(:input) { float_string + e + integer_string }
+        context 'non-numeric characters' do
+          let(:input) { 'a' }
+          it { is_expected.to be_failure }
+        end
 
-          context 'capital E' do
-            let(:e) { 'E' }
-            it { is_expected.to be_success }
+        context 'negative signs other than at the beginning' do
+          context 'middle' do
+            let(:input) { "#{integer_string}¯#{integer_string}" }
+            it { is_expected.to be_failure }
           end
 
-          context 'lowercase e' do
-            let(:e) { 'e' }
-            it { is_expected.to be_success }
+          context 'end' do
+            let(:input) { "#{integer_string}¯" }
+            it { is_expected.to be_failure }
           end
         end
 
-        xit 'does not parse letters' do
-          expect(subject).not_to parse 'a'
-        end
-
-        xit 'does not parse negative signs except at the beginning' do
-          expect(subject).not_to parse "#{integer_string}¯#{integer_string}"
-          expect(subject).not_to parse "#{integer_string}¯"
-        end
-
-        xit 'does not parse numbers with more than one decimal point' do
-          expect(subject).not_to parse "#{float_string}.#{integer}"
+        context 'more than one decimal point' do
+          let(:input) { "#{float_string}.#{integer}" }
+          it { is_expected.to be_failure }
         end
       end
 
@@ -103,16 +146,29 @@ module APL
 
           context 'all positive integers' do
             it { is_expected.to be_success }
+            it 'returns the array' do
+              expect(result).to be == integers
+            end
           end
 
           context 'negative too' do
-            let(:integers) { super() << "¯#{rand 1..1000}" }
+            let(:negative) { rand 1..1000 }
+            let(:negative_string) { "¯#{negative}" }
+            let(:numbers_string) { super() + " #{negative_string}" }
             it { is_expected.to be_success }
+            it 'returns the array' do
+              expect(result).to be == numbers + [-negative]
+            end
           end
 
           context 'floats' do
             let(:numbers) { super() << (rand(1..1000) * 0.01) }
             it { is_expected.to be_success }
+            it 'returns the array' do
+              result.each_with_index do |float, index|
+                expect(float).to be_within(0.1).of numbers[index]
+              end
+            end
           end
         end
       end
