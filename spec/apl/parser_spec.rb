@@ -182,7 +182,7 @@ module APL
       end
 
       describe 'root' do
-        let(:function_symbols) { %w[+ - × ÷] }
+        let(:function_symbols) { %i[+ - × ÷] }
         let(:function) { function_symbols.sample }
         let(:numbers) { [integer_string, float_string] }
         let(:vector) { [integer, float] }

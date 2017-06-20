@@ -22,7 +22,7 @@ function = < /[-+×÷]/ > { text }
 root = expression
 expression = < function_call | term >
 
-function_call = term?:x function:op expression:y { APL::AST::Function.new op: op, x: x, y: y }
+function_call = term?:x function:op expression:y { APL::AST::Function.new op: op.to_sym, x: x, y: y }
 
 term = < primitive_value:prim | '(' expression ')' >
 primitive_value = (vector | number):value { value }
