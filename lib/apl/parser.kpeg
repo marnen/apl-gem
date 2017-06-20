@@ -17,12 +17,12 @@ exponent_prefix = /e/i
 negative_sign = "¯" { -1 }
 optional_negative = negative_sign?:negative { negative || 1 }
 radix = < '.' > { text }
-function = /[-+×÷]/
+function = < /[-+×÷]/ > { text }
 
 root = expression
 expression = < function_call | term >
 
-function_call = < term? function expression >
+function_call = term?:x function:op expression:y { APL::AST::Function.new op: op, x: x, y: y }
 
 term = < primitive_value:prim | '(' expression ')' >
 primitive_value = (vector | number):value { value }

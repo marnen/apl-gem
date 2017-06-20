@@ -181,12 +181,13 @@ module APL
         end
       end
 
-      describe 'expression' do
+      describe 'root' do
         let(:function_symbols) { %w[+ - × ÷] }
         let(:function) { function_symbols.sample }
         let(:numbers) { [integer_string, float_string] }
-        let(:vector_string) { numbers.join ' ' }
-        let(:rule) { 'expression' }
+        let(:vector) { [integer, float] }
+        let(:vector_string) { vector.join ' ' }
+        let(:rule) { 'root' }
 
         context 'single value' do
           context 'integer' do
@@ -206,56 +207,131 @@ module APL
         end
 
         context 'function calls' do
-          let(:simple_dyadic) { [numbers.sample, function, numbers.sample].join }
+          let(:x) { numbers.sample }
+          let(:y) { numbers.sample }
+          let(:dyadic) { [x, function, y].join }
 
           context 'dyadic' do
+            let(:input) { dyadic }
+
             context 'two simple numbers' do
-              let(:input) { simple_dyadic }
               it { is_expected.to be_success }
+
+              it 'returns an AST representation of the function' do
+                expect(result).to be == APL::AST::Function.new(op: function, x: x.to_f, y: y.to_f)
+              end
             end
 
             context 'vector on left' do
-              let(:input) { [vector_string, function, integer].join }
+              let(:x) { vector_string }
               it { is_expected.to be_success }
+
+              it 'returns an AST representation of the function' do
+                expect(result).to be == APL::AST::Function.new(op: function, x: vector, y: y.to_f)
+              end
             end
 
             context 'vector on right' do
-              let(:input) { [float, function, vector_string].join }
+              let(:y) { vector_string }
               it { is_expected.to be_success }
+
+              it 'returns an AST representation of the function' do
+                expect(result).to be == APL::AST::Function.new(op: function, x: x.to_f, y: vector)
+              end
             end
 
             context 'multiple dyadic calls without parentheses' do
-              let(:input) { (1..3).map { [numbers.sample, function_symbols.sample] }.join << numbers.sample }
+              let(:tokens) { (1..3).map { [numbers.sample, function_symbols.sample] } + [numbers.sample] }
+              let(:input) { tokens.join }
+
               it { is_expected.to be_success }
+
+              it 'returns a nested AST representation of the function' do
+                expect(result).to be == AST::Function.new({
+                  x: tokens[0].first.to_f,
+                  op: tokens[0].last,
+                  y: AST::Function.new({
+                    x: tokens[1].first.to_f,
+                    op: tokens[1].last,
+                    y: AST::Function.new({
+                      x: tokens[2].first.to_f,
+                      op: tokens[2].last,
+                      y: tokens[3].to_f
+                    })
+                  })
+                })
+
+              end
             end
 
-            context 'first argument parenthesized' do
-              let(:input) { "(#{simple_dyadic})#{function}#{numbers.sample}" }
-              it { is_expected.to be_success }
-            end
+            context 'parentheses' do
+              let(:z) { numbers.sample }
 
-            context 'second argument parenthesized' do
-              let(:input) { "#{numbers.sample}#{function}(#{simple_dyadic})" }
-              it { is_expected.to be_success }
+              context 'first argument parenthesized' do
+                let(:input) { "(#{dyadic})#{function}#{z}" }
+
+                it { is_expected.to be_success }
+
+                it 'returns an AST representation of the function' do
+                  expect(result).to be == AST::Function.new({
+                    x: AST::Function.new({
+                      x: x.to_f, op: function, y: y.to_f
+                    }),
+                    op: function,
+                    y: z.to_f
+                  })
+                end
+              end
+
+              context 'second argument parenthesized' do
+                let(:input) { "#{z}#{function}(#{dyadic})" }
+                it { is_expected.to be_success }
+
+                it 'returns an AST representation of the function' do
+                  expect(result).to be == AST::Function.new({
+                    x: z.to_f,
+                    op: function,
+                    y: AST::Function.new({
+                      x: x.to_f, op: function, y: y.to_f
+                    })
+                  })
+                end
+              end
             end
           end
 
           context 'monadic' do
-            let(:simple_monadic) {  "#{function}#{numbers.sample}" }
+            let(:simple_monadic) {  "#{function}#{y}" }
 
             context 'simple number' do
               let(:input) { simple_monadic }
               it { is_expected.to be_success }
+
+              it 'returns an AST representation with nil left argument' do
+                expect(result).to be == AST::Function.new(x: nil, op: function, y: y.to_f)
+              end
             end
 
             context 'all parenthesized' do
               let(:input) { "(#{simple_monadic})" }
               it { is_expected.to be_success }
+
+              it 'returns an AST representation' do
+                expect(result).to be == AST::Function.new(x: nil, op: function, y: y.to_f)
+              end
             end
 
             context 'only argument parenthesized' do
-              let(:input) { "#{function}(#{simple_dyadic})" }
+              let(:input) { "#{function}(#{dyadic})" }
               it { is_expected.to be_success }
+
+              it 'returns a nested AST representation' do
+                expect(result).to be == AST::Function.new(
+                  x: nil, op: function, y: AST::Function.new(
+                    x: x.to_f, op: function, y: y.to_f
+                  )
+                )
+              end
             end
           end
         end
