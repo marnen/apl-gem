@@ -24,14 +24,19 @@ Gem::Specification.new do |spec|
   end
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
-    f.match(%r{^(test|spec|features)/})
-  end
+    f.match(%r{^(test|spec|features|CHANGELOG)/}) || f.match(%r{\.kpeg$})
+  end << 'lib/apl/parser.kpeg.rb'
   spec.bindir        = "exe"
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_development_dependency "bundler", "~> 1.15"
-  spec.add_development_dependency "rake", "~> 10.0"
-  spec.add_development_dependency "rspec", "~> 3.0"
-  spec.add_development_dependency 'guard-rspec'
+  [
+    ["bundler", "~> 1.15"],
+    ["rake", "~> 10.0"],
+    'byebug',
+    'faker',
+    ['kpeg', '~> 1.0'],
+    ["rspec", "~> 3.0"],
+    'guard-rspec'
+  ].each {|gem| spec.add_development_dependency *gem }
 end

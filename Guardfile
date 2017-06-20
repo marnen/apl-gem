@@ -24,7 +24,7 @@
 #  * zeus: 'zeus rspec' (requires the server to be started separately)
 #  * 'just' rspec: 'rspec'
 
-guard :rspec, cmd: "bundle exec rspec" do
+guard :rspec, cmd: "bundle exec rspec", failed_mode: :keep do
   require "guard/rspec/dsl"
   dsl = Guard::RSpec::Dsl.new(self)
 
@@ -39,6 +39,7 @@ guard :rspec, cmd: "bundle exec rspec" do
   # Ruby files
   ruby = dsl.ruby
   dsl.watch_spec_files_for(ruby.lib_files)
+  dsl.watch_spec_files_for(%r{^(lib/.+)\.kpeg$})
 
   # Rails files
   rails = dsl.rails(view_extensions: %w(erb haml slim))
