@@ -34,6 +34,7 @@ Gem::Specification.new do |spec|
     ["bundler", "~> 1.15"],
     ["rake", "~> 10.0"],
     'byebug',
+    'faker',
     ['kpeg', '~> 1.0'],
     ["rspec", "~> 3.0"],
     'guard-rspec'

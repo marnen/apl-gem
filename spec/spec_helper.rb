@@ -1,6 +1,7 @@
 require "bundler/setup"
 require "apl"
 require 'byebug'
+require 'faker'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
