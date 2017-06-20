@@ -10,8 +10,9 @@ module APL
       end
 
       def compute!
-        block = self.class.ops[op] || raise(ArgumentError, "I don't know how to do the #{op} operation.")
-        computed_args = [x, y].map do |arg|
+        ops = monadic? ? self.class.monadic : self.class.dyadic
+        block = ops[op] || raise(ArgumentError, "I don't know how to do the #{op} operation.")
+        computed_args = args.map do |arg|
           begin
             arg.compute!
           rescue NoMethodError
@@ -29,13 +30,38 @@ module APL
 
       private
 
-      def self.ops
-        @ops ||= {
+      def self.monadic
+        @monadic ||= {
+          '+': ->(y) { y },
+          '-': ->(y) { -y },
+          '×': ->(y) do
+            if y == 0
+              0
+            elsif y < 0
+              -1
+            else
+              1
+            end
+          end,
+          '÷': ->(y) { 1.0 / y }
+        }
+      end
+
+      def self.dyadic
+        @dyadic ||= {
           '+': ->(x, y) { x + y },
           '-': ->(x, y) { x - y },
           '×': ->(x, y) { x * y },
           '÷': ->(x, y) { x.to_f / y }
         }
+      end
+
+      def args
+        [x, y].compact
+      end
+
+      def monadic?
+        x.nil?
       end
     end
   end

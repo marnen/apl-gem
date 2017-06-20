@@ -17,6 +17,52 @@ module APL::AST
     describe '#compute!' do
       subject { super().compute! }
 
+      context 'monadic' do
+        let(:x) { nil }
+
+        context '+' do
+          let(:op) { :+ }
+
+          it 'returns its argument unchanged' do
+            expect(subject).to be == y
+          end
+        end
+
+        context '-' do
+          let(:op) { :- }
+
+          it 'returns the additive inverse of its argument' do
+            expect(subject).to be == -y
+          end
+        end
+
+        context '×' do
+          let(:op) { :× }
+
+          context 'zero' do
+            let(:y) { 0 }
+            it { is_expected.to be_zero }
+          end
+
+          context 'positive' do
+            it { is_expected.to be == 1 }
+          end
+
+          context 'negative' do
+            let(:y) { -super() }
+            it { is_expected.to be == -1 }
+          end
+        end
+
+        context '÷' do
+          let(:op) { :÷ }
+
+          it 'returns the reciprocal of its argument' do
+            expect(subject).to be == 1.0 / y
+          end
+        end
+      end
+
       context 'dyadic' do
         context '+' do
           let(:op) { :+ }
