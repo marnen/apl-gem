@@ -56,6 +56,7 @@ module APL::AST
 
         context '÷' do
           let(:op) { :÷ }
+          let(:y) { super() + 1 }
 
           it 'returns the reciprocal of its argument' do
             expect(subject).to be == 1.0 / y
@@ -100,6 +101,7 @@ module APL::AST
 
         context '÷' do
           let(:op) { :÷ }
+          let(:y) { super() + 1 }
 
           it 'divides x by y (floating-point)' do
             expect(subject).to be_within(0.001).of x.to_f / y
