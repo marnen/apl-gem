@@ -11,6 +11,7 @@
 }
 
 space = /\s/
+- = space*
 DIGIT = /[0-9]/
 digits = < DIGIT+ > { text }
 exponent_prefix = /e/i
@@ -19,16 +20,15 @@ optional_negative = negative_sign?:negative { negative || 1 }
 radix = < '.' > { text }
 function = < /[-+×÷]/ > { text }
 
-root = expression
-expression = < function_call | term >
+root = - expression
+expression = (function_call | term):expression - { expression }
+function_call = term?:x - function:op - expression:y { APL::AST::Function.new op: op.to_sym, x: x, y: y }
 
-function_call = term?:x function:op expression:y { APL::AST::Function.new op: op.to_sym, x: x, y: y }
-
-term = < primitive_value:prim | '(' expression ')' >
+term = primitive_value:value | '(' - expression:value - ')' { value }
 primitive_value = (vector | number):value { value }
-vector = number:first primitive_value:rest { Array(first) + Array(rest) }
+vector = number:first primitive_value:rest - { Array(first) + Array(rest) }
 
-number = optional_negative:negative nonnegative_integer:integer decimal?:decimal exponent?:exponent space? { (integer + (decimal ? decimal.to_f : 0)) * negative * (exponent || 1) }
+number = optional_negative:negative nonnegative_integer:integer decimal?:decimal exponent?:exponent - { (integer + (decimal ? decimal.to_f : 0)) * negative * (exponent || 1) }
 integer = optional_negative:negative nonnegative_integer:integer { integer * negative }
 nonnegative_integer = digits:num { num.to_i }
 decimal = < radix digits > { text }

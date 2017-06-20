@@ -178,6 +178,14 @@ module APL
               end
             end
           end
+
+          context 'consuming trailing whitespace' do
+            let(:input) { "#{numbers_string} " }
+            it { is_expected.to be_success }
+            it 'returns the number as if the whitespace did not exist' do
+              expect(result).to be == numbers
+            end
+          end
         end
       end
 
@@ -204,21 +212,51 @@ module APL
             let(:input) { vector_string }
             it { is_expected.to be_success }
           end
+
+          context 'whitespace' do
+            let(:input) { "   #{integer_string}  " }
+            it { is_expected.to be_success }
+
+            it 'ignores any leading and trailing whitespace' do
+              expect(result).to be == integer
+            end
+
+            context 'parentheses' do
+              let(:input) { "(#{super()})" }
+              it { is_expected.to be_success }
+
+
+              it 'ignores whitespace in parentheses' do
+                expect(result).to be == integer
+              end
+            end
+          end
         end
 
         context 'function calls' do
           let(:x) { numbers.sample }
           let(:y) { numbers.sample }
-          let(:dyadic) { [x, function, y].join }
+          let(:separator) { '' }
+          let(:dyadic) { [x, function, y].join separator }
 
           context 'dyadic' do
             let(:input) { dyadic }
+            let(:expected_result) { APL::AST::Function.new(op: function, x: x.to_f, y: y.to_f) }
 
             context 'two simple numbers' do
               it { is_expected.to be_success }
 
               it 'returns an AST representation of the function' do
-                expect(result).to be == APL::AST::Function.new(op: function, x: x.to_f, y: y.to_f)
+                expect(result).to be == expected_result
+              end
+
+              context 'whitespace around function symbol' do
+                let(:separator) { ' ' * rand(1..5) }
+                it { is_expected.to be_success }
+
+                it 'ignores the space' do
+                  expect(result).to be == expected_result
+                end
               end
             end
 
