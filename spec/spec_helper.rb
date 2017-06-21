@@ -1,7 +1,12 @@
+ENV['PROJECT_ENV'] = 'test'
+
 require "bundler/setup"
-require "apl"
 require 'byebug'
 require 'faker'
+
+require 'support/compile_parser'
+
+require 'apl'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -14,3 +19,4 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 end
+
