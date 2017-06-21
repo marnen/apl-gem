@@ -3,18 +3,6 @@ require 'tempfile'
 
 module APL
   RSpec.describe 'Parser' do
-    tempfile = Tempfile.new ['parser', '.rb']
-
-    before(:all) do
-      parser_path = File.join(File.dirname(__FILE__), '../../lib/apl/parser.kpeg')
-      system 'bundle', 'exec', 'kpeg', '-o', tempfile.path, '--force', parser_path
-      require tempfile.path
-    end
-
-    after(:all) do
-      tempfile.unlink
-    end
-
     let(:subject_class) { APL::Parser }
     let(:input) { '' }
     let(:parser) { subject_class.new input }

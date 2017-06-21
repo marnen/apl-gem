@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/marnen/apl-gem.svg?branch=master)](https://travis-ci.org/marnen/apl-gem)
+
 # APL
 
 Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/apl`. To experiment with that code, run `bin/console` for an interactive prompt.
@@ -23,6 +25,10 @@ Or install it yourself as:
 ## Usage
 
 TODO: Write usage instructions here
+
+## Compatibility
+
+We test against currently supported releases of Ruby; see [.travis.yml](./.travis.yml) for our build matrix. If you'd like compatibility with a version of Ruby not in that matrix, pull requests are welcome!
 
 ## Development
 
